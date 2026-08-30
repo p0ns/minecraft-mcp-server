@@ -1,0 +1,32 @@
+import test from 'ava';
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+
+test('server starts and registers MCP tools', async (t) => {
+  const transport = new StdioClientTransport({
+    command: process.execPath,
+    args: [
+      '--import=tsx',
+      'src/main.ts',
+      '--host',
+      '127.0.0.1',
+      '--port',
+      '1',
+      '--username',
+      'SmokeBot'
+    ],
+    stderr: 'pipe'
+  });
+  const client = new Client({ name: 'startup-smoke-test', version: '1.0.0' });
+
+  try {
+    await client.connect(transport);
+    const { tools } = await client.listTools();
+    const toolNames = new Set(tools.map((tool) => tool.name));
+
+    t.true(toolNames.has('get-position'));
+    t.true(toolNames.has('smelt-item'));
+  } finally {
+    await client.close();
+  }
+});

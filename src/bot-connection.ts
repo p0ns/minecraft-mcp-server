@@ -1,9 +1,6 @@
 import mineflayer from 'mineflayer';
 import pathfinderPkg from 'mineflayer-pathfinder';
 const { pathfinder, Movements } = pathfinderPkg;
-import minecraftData from 'minecraft-data';
-
-const SUPPORTED_MINECRAFT_VERSION = '1.21.11';
 
 type ConnectionState = 'connected' | 'connecting' | 'disconnected';
 
@@ -69,8 +66,7 @@ export class BotConnection {
       this.state = 'connected';
       this.callbacks.onLog('info', 'Bot spawned in world');
 
-      const mcData = minecraftData(bot.version);
-      const defaultMove = new Movements(bot, mcData);
+      const defaultMove = new Movements(bot);
       bot.pathfinder.setMovements(defaultMove);
 
       bot.chat('LLM-powered bot ready to receive instructions!');
@@ -173,7 +169,7 @@ export class BotConnection {
         `Please ensure:\n` +
         `1. Minecraft server is running on ${this.config.host}:${this.config.port}\n` +
         `2. Server is accessible from this machine\n` +
-        `3. Server version is compatible (latest supported: ${SUPPORTED_MINECRAFT_VERSION})\n\n` +
+        `3. Server version is compatible (latest supported: ${mineflayer.latestSupportedVersion})\n\n` +
         `For setup instructions, visit: https://github.com/yuniko-software/minecraft-mcp-server`;
 
       return { connected: false, message: errorMessage };

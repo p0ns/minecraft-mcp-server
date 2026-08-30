@@ -2,7 +2,7 @@
 
 ## Prerequisites
 - Git
-- Node.js (>=20.10.0)
+- Node.js (>=22.12.0)
 - A running Minecraft game (tested with Minecraft 1.21.11 Java Edition)
 - Claude Desktop (or another MCP-compatible client)
 

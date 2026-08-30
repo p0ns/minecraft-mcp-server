@@ -15,7 +15,7 @@
 ___
 
 > [!IMPORTANT]
-> Currently supports Minecraft version 1.21.11. Newer versions may not work with this MCP server, but we will add support as soon as possible.
+> Minecraft protocol detection is automatic. The locked Mineflayer 4.38 release supports Java Edition versions 1.8 through 26.1, including 1.21.11.
 
 https://github.com/user-attachments/assets/6f17f329-3991-4bc7-badd-7cde9aacb92f
 
@@ -28,8 +28,8 @@ A Minecraft bot powered by large language models and [Mineflayer API](https://gi
 ## Prerequisites
 
 - Git
-- Node.js (>= 20.10.0)
-- A running Minecraft game (the setup below was tested with Minecraft 1.21.8 Java Edition included in Microsoft Game Pass)
+- Node.js (>= 22.12.0)
+- A running, supported Minecraft Java Edition game (Mineflayer's current tested range is 1.8 through 26.1)
 - An MCP-compatible client. Claude Desktop will be used as an example, but other MCP clients are also supported
 
 ## Getting started

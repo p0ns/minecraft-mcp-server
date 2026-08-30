@@ -43,6 +43,9 @@ test('fly-to successfully flies to destination', async (t) => {
       flyTo: flyToStub,
       stopFlying: stopFlyingStub
     },
+    game: {
+      gameMode: 'creative'
+    },
     entity: {
       position: new Vec3(0, 64, 0)
     }
@@ -72,8 +75,14 @@ test('fly-to returns error when creative mode not available', async (t) => {
   } as unknown as BotConnection;
   const factory = new ToolFactory(mockServer, mockConnection);
 
+  const flyToStub = sinon.stub();
   const mockBot = {
-    creative: null
+    creative: {
+      flyTo: flyToStub
+    },
+    game: {
+      gameMode: 'survival'
+    }
   } as unknown as mineflayer.Bot;
   const getBot = () => mockBot;
 
@@ -86,6 +95,7 @@ test('fly-to returns error when creative mode not available', async (t) => {
   const result = await executor({ x: 100, y: 80, z: 200 });
 
   t.true(result.content[0].text.includes('Creative mode is not available'));
+  t.true(flyToStub.notCalled);
 });
 
 test('fly-to handles flight errors', async (t) => {
@@ -103,6 +113,9 @@ test('fly-to handles flight errors', async (t) => {
     creative: {
       flyTo: flyToStub,
       stopFlying: stopFlyingStub
+    },
+    game: {
+      gameMode: 'creative'
     },
     entity: {
       position: new Vec3(0, 64, 0)

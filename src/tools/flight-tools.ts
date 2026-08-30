@@ -46,7 +46,7 @@ export function registerFlightTools(factory: ToolFactory, getBot: () => mineflay
 
       const bot = getBot();
 
-      if (!bot.creative) {
+      if (bot.game.gameMode !== 'creative') {
         return factory.createResponse("Creative mode is not available. Cannot fly.");
       }
 
