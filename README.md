@@ -15,7 +15,7 @@
 ___
 
 > [!IMPORTANT]
-> Minecraft protocol detection is automatic. The locked Mineflayer 4.38 release supports Java Edition versions 1.8 through 26.1, including 1.21.11.
+> Mineflayer 4.38 maps Minecraft 26.1.2 to protocol 775 and its tested 26.1 data. Direct connections to older supported Java Edition versions still use automatic protocol detection.
 
 https://github.com/user-attachments/assets/6f17f329-3991-4bc7-badd-7cde9aacb92f
 
@@ -34,15 +34,53 @@ A Minecraft bot powered by large language models and [Mineflayer API](https://gi
 
 ## Getting started
 
-This bot is designed to be used with Claude Desktop through the Model Context Protocol (MCP).
+This bot supports direct Minecraft connections and generic ticket-authenticated connections. It is designed to run through an MCP client such as Claude Desktop.
 
-### Run Minecraft
+### Connect with ticket authentication
 
-Create a singleplayer world and open it to LAN (`ESC -> Open to LAN`). Bot will try to connect using port `25565` and hostname `localhost`. These parameters could be configured in `claude_desktop_config.json` on a next step. 
+Obtain a service key and HTTPS ticket endpoint from your Minecraft service provider, then store both in a protected file:
 
-### MCP Configuration
+```bash
+mkdir -p ~/.config/minecraft-mcp
+cat > ~/.config/minecraft-mcp/ticket-auth.env <<'EOF'
+MCAUTH_BOT_SERVICE_KEY=mcbot_replace_with_the_complete_key
+MCAUTH_TICKET_ENDPOINT=https://auth.example.com/v1/bot/tickets
+EOF
+chmod 600 ~/.config/minecraft-mcp/ticket-auth.env
+```
 
-Make sure that [Claude Desktop](https://claude.ai/download) is installed. Open `File -> Settings -> Developer -> Edit Config`. It should open installation directory. Find file with a name `claude_desktop_config.json` and insert the following code:
+Never commit the key or put it in an MCP prompt, command argument, URL, Minecraft chat, DNS, or logs. The server sends it only as a Bearer token to the configured HTTPS endpoint; redirects are not followed.
+
+On macOS or Linux, configure Claude Desktop without placing the key itself in `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "minecraft": {
+      "command": "sh",
+      "args": [
+        "-c",
+        "set -a; . \"$HOME/.config/minecraft-mcp/ticket-auth.env\"; set +a; exec npx -y github:p0ns/minecraft-mcp-server"
+      ]
+    }
+  }
+}
+```
+
+When `MCAUTH_BOT_SERVICE_KEY` is present, `MCAUTH_TICKET_ENDPOINT` is required, ticket mode takes precedence, and `--host`, `--port`, and `--username` are ignored. The bot:
+
+- requests a one-use ticket for server ID `primary`;
+- connects to the returned hostname and port as the returned Minecraft name;
+- uses offline authentication and Minecraft version `26.1.2` (protocol 775);
+- obtains a fresh ticket after every disconnect;
+- honors rate limits and retries temporary authentication-service failures without stopping MCP;
+- stops retrying rejected credentials until the MCP server is restarted.
+
+For other MCP clients and Windows, inject both variables through a protected secret manager or the parent process environment. Do not place the key in an unprotected MCP configuration file. Rotate the key immediately if it is exposed.
+
+### Connect directly
+
+Without `MCAUTH_BOT_SERVICE_KEY`, the original static host mode remains active. For a local world, open it to LAN (`ESC -> Open to LAN`) and configure Claude Desktop:
 
 ```json
 {
@@ -51,7 +89,7 @@ Make sure that [Claude Desktop](https://claude.ai/download) is installed. Open `
       "command": "npx",
       "args": [
         "-y",
-        "github:yuniko-software/minecraft-mcp-server",
+        "github:p0ns/minecraft-mcp-server",
         "--host",
         "localhost",
         "--port",
@@ -64,11 +102,11 @@ Make sure that [Claude Desktop](https://claude.ai/download) is installed. Open `
 }
 ```
 
-Double-check that right `--port` and `--host` parameters were used. Make sure to completely reboot the Claude Desktop application (should be closed in OS tray). 
+Double-check the direct server host and port. Completely restart Claude Desktop after changing its configuration or rotating a service key.
 
 ## Running
 
-Make sure Minecraft game is running and the world is opened to LAN. Then start Claude Desktop application and the bot should join the game. 
+Start Claude Desktop after configuring either connection mode. In direct LAN mode, ensure the Minecraft world is open to LAN; in ticket mode, the bot will request a fresh ticket and join the returned server automatically.
 
 **It could take some time for Claude Desktop to boot the MCP server**. The marker that the server has booted successfully:
 

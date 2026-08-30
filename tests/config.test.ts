@@ -1,5 +1,39 @@
 import test from 'ava';
-import { parseConfig } from '../src/config.js';
+import { parseConfig, readBotServiceKey, readTicketEndpoint } from '../src/config.js';
+
+test('readBotServiceKey selects direct mode when the variable is absent', (t) => {
+  t.is(readBotServiceKey({}), undefined);
+});
+
+test('readBotServiceKey returns the exact environment secret', (t) => {
+  const serviceKey = 'mcbot_complete_service_key';
+
+  t.is(readBotServiceKey({ MCAUTH_BOT_SERVICE_KEY: serviceKey }), serviceKey);
+});
+
+test('readBotServiceKey rejects empty or unsafe values without including them in the error', (t) => {
+  for (const serviceKey of ['', '   ', 'not-a-service-key', 'mcbot_secret\nInjected: value', 'mcbot_s\u00ebcret']) {
+    const error = t.throws(() => readBotServiceKey({ MCAUTH_BOT_SERVICE_KEY: serviceKey }));
+    t.true(error.message.includes('MCAUTH_BOT_SERVICE_KEY'));
+    if (serviceKey.length > 0) {
+      t.false(error.message.includes(serviceKey));
+    }
+  }
+});
+
+test('readTicketEndpoint returns a configured HTTPS endpoint', (t) => {
+  const endpoint = 'https://auth.example.com/v1/bot/tickets';
+
+  t.is(readTicketEndpoint({ MCAUTH_TICKET_ENDPOINT: endpoint }), endpoint);
+});
+
+test('readTicketEndpoint rejects absent or unsafe endpoints', (t) => {
+  for (const endpoint of [undefined, '', 'http://auth.example.com/tickets', 'https://user:pass@auth.example.com/tickets']) {
+    const error = t.throws(() => readTicketEndpoint({ MCAUTH_TICKET_ENDPOINT: endpoint }));
+    t.true(error.message.includes('MCAUTH_TICKET_ENDPOINT'));
+    if (endpoint) t.false(error.message.includes(endpoint));
+  }
+});
 
 test('parseConfig returns default values', (t) => {
   const originalArgv = process.argv;

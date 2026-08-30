@@ -3,6 +3,14 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 
 test('server starts and registers MCP tools', async (t) => {
+  const env = Object.fromEntries(
+    Object.entries(process.env).filter(
+      (entry): entry is [string, string] =>
+        entry[0] !== 'MCAUTH_BOT_SERVICE_KEY' &&
+        entry[0] !== 'MCAUTH_TICKET_ENDPOINT' &&
+        entry[1] !== undefined
+    )
+  );
   const transport = new StdioClientTransport({
     command: process.execPath,
     args: [
@@ -15,6 +23,7 @@ test('server starts and registers MCP tools', async (t) => {
       '--username',
       'SmokeBot'
     ],
+    env,
     stderr: 'pipe'
   });
   const client = new Client({ name: 'startup-smoke-test', version: '1.0.0' });

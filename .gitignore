@@ -4,6 +4,11 @@ dist/
 # Node.js dependencies
 node_modules/
 
+# Local secrets
+.env
+.env.*
+!.env.example
+
 # Log files
 logs/
 *.log

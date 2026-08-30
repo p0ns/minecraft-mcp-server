@@ -4,8 +4,9 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { setupStdioFiltering } from './stdio-filter.js';
 import { log } from './logger.js';
-import { parseConfig } from './config.js';
+import { parseConfig, readBotServiceKey, readTicketEndpoint } from './config.js';
 import { BotConnection } from './bot-connection.js';
+import { McAuthTicketClient } from './mc-auth-ticket-client.js';
 import { ToolFactory } from './tool-factory.js';
 import { MessageStore } from './message-store.js';
 import { registerPositionTools } from './tools/position-tools.js';
@@ -30,17 +31,28 @@ process.on('uncaughtException', (error) => {
 
 async function main() {
   const config = parseConfig();
+  const serviceKey = readBotServiceKey();
+  const ticketEndpoint = serviceKey ? readTicketEndpoint() : null;
   const messageStore = new MessageStore();
+
+  const ticketClient = serviceKey && ticketEndpoint
+    ? new McAuthTicketClient(serviceKey, ticketEndpoint, {
+      onRetry: ({ reason, status, delayMs }) => {
+        const statusText = status ? ` (HTTP ${status})` : '';
+        log('warn', `Bot ticket request failed: ${reason}${statusText}; retrying in ${delayMs}ms`);
+      }
+    })
+    : null;
 
   const connection = new BotConnection(
     config,
     {
       onLog: log,
       onChatMessage: (username, message) => messageStore.addMessage(username, message)
-    }
+    },
+    ticketClient ? 5000 : 2000,
+    ticketClient ? (signal) => ticketClient.acquireTicket(signal) : undefined
   );
-
-  connection.connect();
 
   const server = new McpServer({
     name: "minecraft-mcp-server",
@@ -65,6 +77,8 @@ async function main() {
     log('info', 'MCP Client has disconnected. Shutting down...');
     process.exit(0);
   });
+
+  void connection.connect();
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
